@@ -1,44 +1,72 @@
-names = []
-amounts = []
+import sqlite3
 
-def show_expenses():
-    total = 0 
-    for i in range(len(names)):
-        print(names[i], "-", amounts[i])
-        total += amounts[i]
-    print("Total:", total)
+def add_expense():
+    description = input("What did you spend money on?")
+    amount = float(input("How much did you spend?"))
+    category = input("What category?")
+    date = input("Date (YYYY-MM-DD)")
 
-def save_expenses():
-    file = open("expenses.txt", "w")
-    for i in range(len(names)):
-        file.write(names[i] + " - " + str(amounts[i]) + "\n")
-    file.close()
-    print("Saved!")
+    connection = sqlite3.connect("expenses.db")
+    cursor = connection.cursor()
 
-try:
-    file = open("expenses.txt", "r")
-    for line in file:
-        parts = line.strip().split(" -")
-        names.append(parts[0])
-        amounts.append(float(parts[1]))
-except:
-    print("No saved expenses yet.")
+    cursor.execute("""
+           CREATE TABLE IF NOT EXISTS expenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT,
+                amount REAL,
+                category TEXT,
+                date TEXT
+                )
+            """)
 
-while True:
-    name = input("What did you spend money on? (Type 'q' to quit): ")
-    if name == 'q':
-        break
-    amount = float(input("How much did you spend? "))
-    names.append(name)
-    amounts.append(amount)
-total = 0
-for i in range(len(amounts)):
-    print(names[i], "-", amounts[i])
-    total += amounts[i]
-print("Total: ", total)
+    cursor.execute("""
+      INSERT INTO expenses (description, amount, category, date)
+      VALUES(?,?,?,?)
+      """,(description, amount, category, date))
 
-file = open("expenses.txt", "w")
-for i in range(len(amounts)):
-    file.write(names[i] + " - " + str(amounts[i]) + "\n")
-file.close()
-print("Saved!")
+    connection.commit()
+    connection.close()
+
+    print("Expense saved successfully!")
+
+def view_expenses():
+    connection = sqlite3.connect("expenses.db")
+    cursor = connection.cursor()
+
+    cursor.execute("""
+               CREATE TABLE IF NOT EXISTS expenses (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    description TEXT,
+                    amount REAL,
+                    category TEXT,
+                    date TEXT
+                    )
+                """)
+
+    cursor.execute("SELECT * FROM expenses")
+    expenses = cursor.fetchall()
+
+    for expense in expenses:
+        print("ID:", expense[0])
+        print("Description:", expense[1])
+        print("Amount: $", expense[2])
+        print("Category:", expense[3])
+        print("Date:", expense[4])
+
+    connection.close()
+
+print("=== EXPENSE TRACKER ===")
+print("1. Add Expense")
+print("2. View Expenses")
+print("3. Exit")
+
+choice = input("Choose an option: ")
+
+if choice == "1":
+    add_expense()
+elif choice == "2":
+    view_expenses()
+elif choice == "3":
+    print("Goodbye!")
+else:
+    print("Invalid option.")
